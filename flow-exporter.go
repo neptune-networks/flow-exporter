@@ -74,8 +74,6 @@ func createConsumer(broker string, topic string) {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	consumed := 0
-
 ConsumerLoop:
 	for {
 		select {
@@ -89,7 +87,7 @@ ConsumerLoop:
 					"destination_as": strconv.Itoa(flow.DestinationAS),
 				},
 			).Add(float64(flow.Bytes))
-			consumed++
+
 			log.Printf("Consumed message offset %d\n", msg.Offset)
 		case <-signals:
 			break ConsumerLoop
