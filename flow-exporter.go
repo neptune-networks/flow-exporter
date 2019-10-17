@@ -3,10 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shopify/sarama"
 	"log"
+	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 )
 
 type flow struct {
@@ -17,6 +22,16 @@ type flow struct {
 	Bytes         int    `json:"bytes"`
 }
 
+var (
+	flowTrafficBytes = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "flow_traffic_bytes",
+			Help: "Bytes received.",
+		},
+		[]string{"source_as", "destination_as"},
+	)
+)
+
 func main() {
 	if len(os.Args) < 3 {
 		fmt.Fprintf(os.Stderr, "Usage: %s <broker> <topic>\n", os.Args[0])
@@ -26,6 +41,10 @@ func main() {
 	broker := os.Args[1]
 	topic := os.Args[2]
 
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		http.ListenAndServe(":2112", nil)
+	}()
 	createConsumer(broker, topic)
 }
 
@@ -55,9 +74,6 @@ func createConsumer(broker string, topic string) {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 
-	sourceCounts := make(map[int]int)
-	destinationCounts := make(map[int]int)
-
 	consumed := 0
 
 ConsumerLoop:
@@ -67,19 +83,16 @@ ConsumerLoop:
 			var flow flow
 			json.Unmarshal([]byte(msg.Value), &flow)
 
-			if flow.SourceAS != 0 {
-				sourceCounts[flow.SourceAS] += flow.Bytes
-			} else if flow.DestinationAS != 0 {
-				destinationCounts[flow.DestinationAS] += flow.Bytes
-			}
-
-			fmt.Printf("Source AS: %d\nDestination AS: %d\nBytes: %d\n\n", flow.SourceAS, flow.DestinationAS, flow.Bytes)
+			flowTrafficBytes.With(
+				prometheus.Labels{
+					"source_as":      strconv.Itoa(flow.SourceAS),
+					"destination_as": strconv.Itoa(flow.DestinationAS),
+				},
+			).Add(float64(flow.Bytes))
 			consumed++
+			log.Printf("Consumed message offset %d\n", msg.Offset)
 		case <-signals:
 			break ConsumerLoop
 		}
 	}
-
-	log.Println("Source data:", sourceCounts)
-	log.Println("Destination data:", sourceCounts)
 }
