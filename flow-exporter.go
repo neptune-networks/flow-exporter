@@ -8,16 +8,20 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 type config struct {
 	broker    string
 	topic     string
 	defaultAS int
+	asns      map[int]string
 }
 
 type flow struct {
@@ -34,7 +38,7 @@ var (
 			Name: "flow_receive_bytes_total",
 			Help: "Bytes received.",
 		},
-		[]string{"source_as", "destination_as"},
+		[]string{"source_as", "source_as_name", "destination_as", "destination_as_name"},
 	)
 
 	flowTransmitBytesTotal = promauto.NewCounterVec(
@@ -42,7 +46,7 @@ var (
 			Name: "flow_transmit_bytes_total",
 			Help: "Bytes transferred.",
 		},
-		[]string{"source_as", "destination_as"},
+		[]string{"source_as", "source_as_name", "destination_as", "destination_as_name"},
 	)
 )
 
@@ -52,22 +56,64 @@ func main() {
 	defaultAS := flag.Int("defaultAS", -1, "The autonomous system number to fall back to if not provided in flow")
 	flag.Parse()
 
-	options := config{broker: *broker, topic: *topic, defaultAS: *defaultAS}
+	asns := fetchASDatabase()
+	runtimeOptions := config{broker: *broker, topic: *topic, defaultAS: *defaultAS}
 
 	if *broker == "" || *topic == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
-	go func() {
-		log.Info("Starting Prometheus web server")
-		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":9590", nil)
-	}()
-	createConsumer(options)
+	go startPrometheusServer()
+	createConsumer(runtimeOptions, asns)
 }
 
-func createConsumer(options config) {
+func fetchASDatabase() map[int]string {
+	log.Info("Fetching up to date AS database")
+	resp, err := http.Get("https://www.cidr-report.org/as2.0/asn.txt")
+	if err != nil {
+		panic(err)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		panic(err)
+	}
+
+	asns := make(map[int]string)
+
+	rawASNs := strings.Split(string(body), "\n")
+
+	for _, rawASN := range rawASNs {
+		if rawASN == "" {
+			continue
+		}
+
+		parsedASN := regexp.MustCompile(`([\d]+)\s+([\w+_-]+).*`).FindStringSubmatch(rawASN)
+		if parsedASN == nil {
+			continue
+		}
+
+		asn, err := strconv.Atoi(parsedASN[1])
+		if err != nil {
+			panic(err)
+		}
+
+		asns[asn] = parsedASN[2]
+	}
+
+	return asns
+}
+
+func startPrometheusServer() {
+	log.Info("Starting Prometheus web server")
+	http.Handle("/metrics", promhttp.Handler())
+	http.ListenAndServe(":9590", nil)
+}
+
+func createConsumer(options config, asnsDatabase map[int]string) {
 	log.Info("Starting Kafka consumer")
 	consumer, err := sarama.NewConsumer([]string{options.broker}, nil)
 	if err != nil {
@@ -108,8 +154,10 @@ ConsumerLoop:
 
 				flowTransmitBytesTotal.With(
 					prometheus.Labels{
-						"source_as":      strconv.Itoa(flow.SourceAS),
-						"destination_as": strconv.Itoa(flow.DestinationAS),
+						"source_as":           strconv.Itoa(flow.SourceAS),
+						"source_as_name":      asnsDatabase[flow.SourceAS],
+						"destination_as":      strconv.Itoa(flow.DestinationAS),
+						"destination_as_name": asnsDatabase[flow.DestinationAS],
 					},
 				).Add(float64(flow.Bytes))
 			} else if flow.SourceAS != 0 && flow.DestinationAS == 0 {
@@ -119,13 +167,15 @@ ConsumerLoop:
 
 				flowReceiveBytesTotal.With(
 					prometheus.Labels{
-						"source_as":      strconv.Itoa(flow.SourceAS),
-						"destination_as": strconv.Itoa(flow.DestinationAS),
+						"source_as":           strconv.Itoa(flow.SourceAS),
+						"source_as_name":      asnsDatabase[flow.SourceAS],
+						"destination_as":      strconv.Itoa(flow.DestinationAS),
+						"destination_as_name": asnsDatabase[flow.DestinationAS],
 					},
 				).Add(float64(flow.Bytes))
 			}
 
-			log.Debug("Consumed message offset %d\n", msg.Offset)
+			log.WithFields(log.Fields{"offset": msg.Offset}).Debug("Consumed message offset")
 		case <-signals:
 			break ConsumerLoop
 		}
