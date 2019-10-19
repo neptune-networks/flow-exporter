@@ -71,7 +71,7 @@ func main() {
 
 func fetchASDatabase() map[int]string {
 	log.Info("Fetching up to date AS database")
-	resp, err := http.Get("https://www.cidr-report.org/as2.0/asn.txt")
+	resp, err := http.Get("http://www.cidr-report.org/as2.0/asn.txt")
 	if err != nil {
 		panic(err)
 	}
