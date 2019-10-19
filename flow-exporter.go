@@ -30,6 +30,7 @@ type flow struct {
 	SourceIP      string `json:"ip_dst"`
 	DestinationIP string `json:"ip_src"`
 	Bytes         int    `json:"bytes"`
+	Hostname      string `json:"label"`
 }
 
 var (
@@ -38,7 +39,7 @@ var (
 			Name: "flow_receive_bytes_total",
 			Help: "Bytes received.",
 		},
-		[]string{"source_as", "source_as_name", "destination_as", "destination_as_name"},
+		[]string{"source_as", "source_as_name", "destination_as", "destination_as_name", "hostname"},
 	)
 
 	flowTransmitBytesTotal = promauto.NewCounterVec(
@@ -46,7 +47,7 @@ var (
 			Name: "flow_transmit_bytes_total",
 			Help: "Bytes transferred.",
 		},
-		[]string{"source_as", "source_as_name", "destination_as", "destination_as_name"},
+		[]string{"source_as", "source_as_name", "destination_as", "destination_as_name", "hostname"},
 	)
 )
 
@@ -158,6 +159,7 @@ ConsumerLoop:
 						"source_as_name":      asnsDatabase[flow.SourceAS],
 						"destination_as":      strconv.Itoa(flow.DestinationAS),
 						"destination_as_name": asnsDatabase[flow.DestinationAS],
+						"hostname":            flow.Hostname,
 					},
 				).Add(float64(flow.Bytes))
 			} else if flow.SourceAS != 0 && flow.DestinationAS == 0 {
@@ -171,6 +173,7 @@ ConsumerLoop:
 						"source_as_name":      asnsDatabase[flow.SourceAS],
 						"destination_as":      strconv.Itoa(flow.DestinationAS),
 						"destination_as_name": asnsDatabase[flow.DestinationAS],
+						"hostname":            flow.Hostname,
 					},
 				).Add(float64(flow.Bytes))
 			}
