@@ -32,6 +32,8 @@ flow_receive_bytes_total{destination_as="397143",destination_as_name="NEPTUNE-NE
 flow_transmit_bytes_total{destination_as="10318",destination_as_name="CABLEVISION S.A.",hostname="border.neptunenetworks.org",source_as="397143",source_as_name="NEPTUNE-NETWORKS - Neptune Networks"} 1137
 ```
 
+Flow Exporter automatically finds the name of the ASN and adds it to the metric.
+
 ### Kafka Schema
 
 Flow exporter requires a Kafka topic that has events which contain the following JSON attributes:
