@@ -50,10 +50,10 @@ Or if you prefer Docker Compose:
 
 ```yml
 flow-exporter:
-	image: neptune-networks/flow-exporter:latest
-	command: --broker=kafka.ny1.fqdn.com:9092 --topic=pmacct.acct --asn=15169
-	expose:
-	  - 9590
+  image: neptune-networks/flow-exporter:latest
+  command: --broker=kafka.ny1.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+  expose:
+    - 9590
 ```
 
 Ideally in the same `docker-compose.yml` file as your Prometheus server to make communication easy.
