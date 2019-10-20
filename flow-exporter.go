@@ -18,10 +18,9 @@ import (
 )
 
 type config struct {
-	broker    string
-	topic     string
-	defaultAS int
-	asns      map[int]string
+	broker string
+	topic  string
+	asns   map[int]string
 }
 
 type flow struct {
@@ -54,11 +53,10 @@ var (
 func main() {
 	broker := flag.String("broker", "", "The Kafka broker to connect to")
 	topic := flag.String("topic", "", "The Kafka topic to consume from")
-	defaultAS := flag.Int("defaultAS", -1, "The autonomous system number to fall back to if not provided in flow")
 	flag.Parse()
 
 	asns := fetchASDatabase()
-	runtimeOptions := config{broker: *broker, topic: *topic, defaultAS: *defaultAS}
+	runtimeOptions := config{broker: *broker, topic: *topic}
 
 	if *broker == "" || *topic == "" {
 		flag.PrintDefaults()
@@ -149,10 +147,6 @@ ConsumerLoop:
 			json.Unmarshal([]byte(msg.Value), &flow)
 
 			if flow.SourceAS == 0 && flow.DestinationAS != 0 {
-				if options.defaultAS != -1 {
-					flow.SourceAS = options.defaultAS
-				}
-
 				flowTransmitBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
@@ -163,10 +157,6 @@ ConsumerLoop:
 					},
 				).Add(float64(flow.Bytes))
 			} else if flow.SourceAS != 0 && flow.DestinationAS == 0 {
-				if options.defaultAS != -1 {
-					flow.DestinationAS = options.defaultAS
-				}
-
 				flowReceiveBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
