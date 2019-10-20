@@ -102,7 +102,7 @@ func fetchASDatabase() map[int]string {
 			panic(err)
 		}
 
-		asns[asn] = parsedASN[2]
+		asns[asn] = strings.ToValidUTF8(parsedASN[2], "")
 	}
 
 	return asns
