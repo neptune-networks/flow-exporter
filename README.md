@@ -20,6 +20,18 @@ The exporter can be started with:
 
 Once running, you can view the data by visiting [http://localhost:9590/metrics](http://localhost:9590/metrics).
 
+An example of the Prometheus metrics you can find are:
+
+```
+# HELP flow_receive_bytes_total Bytes received.
+# TYPE flow_receive_bytes_total counter
+flow_receive_bytes_total{destination_as="397143",destination_as_name="NEPTUNE-NETWORKS - Neptune Networks",hostname="border.neptunenetworks.org",source_as="10318",source_as_name="CABLEVISION S.A."} 663
+
+# HELP flow_transmit_bytes_total Bytes transferred.
+# TYPE flow_transmit_bytes_total counter
+flow_transmit_bytes_total{destination_as="10318",destination_as_name="CABLEVISION S.A.",hostname="border.neptunenetworks.org",source_as="397143",source_as_name="NEPTUNE-NETWORKS - Neptune Networks"} 1137
+```
+
 ### Kafka Schema
 
 Flow exporter requires a Kafka topic that has events which contain the following JSON attributes:
