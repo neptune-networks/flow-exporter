@@ -92,7 +92,7 @@ func fetchASDatabase() map[int]string {
 			continue
 		}
 
-		parsedASN := regexp.MustCompile(`([\d]+)\s+([\w+_-]+).*`).FindStringSubmatch(rawASN)
+		parsedASN := regexp.MustCompile(`([\d]+)\s+(.*),\s(\w{2})`).FindStringSubmatch(rawASN)
 		if parsedASN == nil {
 			continue
 		}
