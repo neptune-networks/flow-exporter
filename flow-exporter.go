@@ -54,10 +54,10 @@ var (
 func main() {
 	broker := flag.String("broker", "", "The Kafka broker to connect to")
 	topic := flag.String("topic", "", "The Kafka topic to consume from")
-	asn := flag.Int("asn", -1, "The ASN being monitored")
+	asn := flag.Int("asn", 0, "The ASN being monitored")
 	flag.Parse()
 
-	if *broker == "" || *topic == "" || *asn == -1 {
+	if *broker == "" || *topic == "" || *asn == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
