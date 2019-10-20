@@ -146,18 +146,8 @@ ConsumerLoop:
 			var flow flow
 			json.Unmarshal([]byte(msg.Value), &flow)
 
-			if flow.SourceAS == 0 && flow.DestinationAS != 0 {
+			if flow.SourceAS != 0 && flow.DestinationAS != 0 {
 				flowTransmitBytesTotal.With(
-					prometheus.Labels{
-						"source_as":           strconv.Itoa(flow.SourceAS),
-						"source_as_name":      asnsDatabase[flow.SourceAS],
-						"destination_as":      strconv.Itoa(flow.DestinationAS),
-						"destination_as_name": asnsDatabase[flow.DestinationAS],
-						"hostname":            flow.Hostname,
-					},
-				).Add(float64(flow.Bytes))
-			} else if flow.SourceAS != 0 && flow.DestinationAS == 0 {
-				flowReceiveBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
 						"source_as_name":      asnsDatabase[flow.SourceAS],
