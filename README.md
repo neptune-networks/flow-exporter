@@ -26,10 +26,10 @@ Flow exporter requires a Kafka topic that has events which contain the following
 
 ```json
 {
-	"label": "bdr1.ny1.fqdn.com",
-	"as_src": 15169,
-	"as_dst": 6939,
-	"bytes": 52,
+  "label": "bdr1.ny1.fqdn.com",
+  "as_src": 15169,
+  "as_dst": 6939,
+  "bytes": 52,
 }
 ```
 
