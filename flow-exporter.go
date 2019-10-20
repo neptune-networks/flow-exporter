@@ -20,6 +20,7 @@ import (
 type config struct {
 	broker string
 	topic  string
+	asn    int
 	asns   map[int]string
 }
 
@@ -53,15 +54,16 @@ var (
 func main() {
 	broker := flag.String("broker", "", "The Kafka broker to connect to")
 	topic := flag.String("topic", "", "The Kafka topic to consume from")
+	asn := flag.Int("asn", -1, "The ASN being monitored")
 	flag.Parse()
 
-	asns := fetchASDatabase()
-	runtimeOptions := config{broker: *broker, topic: *topic}
-
-	if *broker == "" || *topic == "" {
+	if *broker == "" || *topic == "" || *asn == -1 {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
+
+	asns := fetchASDatabase()
+	runtimeOptions := config{broker: *broker, topic: *topic, asn: *asn}
 
 	go startPrometheusServer()
 	createConsumer(runtimeOptions, asns)
@@ -146,7 +148,7 @@ ConsumerLoop:
 			var flow flow
 			json.Unmarshal([]byte(msg.Value), &flow)
 
-			if flow.SourceAS == 0 && flow.DestinationAS != 0 {
+			if flow.SourceAS == options.asn {
 				flowTransmitBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
@@ -156,7 +158,7 @@ ConsumerLoop:
 						"hostname":            flow.Hostname,
 					},
 				).Add(float64(flow.Bytes))
-			} else if flow.SourceAS != 0 && flow.DestinationAS == 0 {
+			} else if flow.DestinationAS == options.asn {
 				flowReceiveBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
