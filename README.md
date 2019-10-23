@@ -81,3 +81,58 @@ git clone https://github.com/neptune-networks/flow-exporter
 cd flow-exporter
 go build
 ```
+
+## [pmacct](http://www.pmacct.net) Integration
+
+Flow Exporter works well with pmacct, a series of tools for monitoring flows in Linux. The following pmacctd configuration can be used to collect flows on Linux, enrich them with BGP ASN data, and publish them to Kafka:
+
+#### `/etc/pmacct/pmacctd.conf`
+
+```
+!
+! pmacctd configuration example
+!
+! Did you know CONFIG-KEYS contains the detailed list of all configuration keys
+! supported by 'nfacctd' and 'pmacctd' ?
+!
+! debug: true
+daemonize: false
+pcap_interfaces_map: /etc/pmacct/interfaces.map
+pmacctd_as: longest
+pmacctd_net: longest
+sampling_rate: 1
+!
+bgp_daemon: true
+bgp_daemon_ip: 127.0.0.2
+bgp_daemon_port: 180
+bgp_daemon_max_peers: 10
+bgp_agent_map: /etc/pmacct/peering_agent.map
+networks_file: /etc/pmacct/networks.lst
+networks_file_no_lpm: true
+!
+aggregate: src_host, dst_host, src_port, dst_port, src_as, dst_as
+!
+plugins: kafka
+kafka_output: json
+kafka_broker_host: kafka.fqdn.com
+kafka_topic: pmacct.acct
+kafka_refresh_time: 5
+kafka_history: 5m
+kafka_history_roundoff: m
+```
+
+And the associated configurations referenced in that file:
+
+#### `/etc/pmacct/interfaces.map`
+
+```
+ifindex=100 ifname=ens3
+```
+
+#### `/etc/pmacct/peering_agent.map`
+
+```
+bgp_ip=<BGP_ROUTER_ID>     ip=0.0.0.0/0
+```
+
+More information on configuring pmacct can be found [here](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS).
