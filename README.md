@@ -110,7 +110,7 @@ bgp_agent_map: /etc/pmacct/peering_agent.map
 networks_file: /etc/pmacct/networks.lst
 networks_file_no_lpm: true
 !
-aggregate: src_host, dst_host, src_port, dst_port, src_as, dst_as, label, proto
+aggregate: src_host, dst_host, src_port, dst_port, src_as, dst_as
 !
 plugins: kafka
 kafka_output: json
