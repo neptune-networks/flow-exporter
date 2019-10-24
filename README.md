@@ -82,7 +82,7 @@ cd flow-exporter
 go build
 ```
 
-## [pmacct](http://www.pmacct.net) Integration
+## [pmacct](https://github.com/pmacct/pmacct) Integration
 
 Flow Exporter works well with pmacct, a series of tools for monitoring flows in Linux. The following pmacctd configuration can be used to collect flows on Linux, enrich them with BGP ASN data, and publish them to Kafka:
 
