@@ -1,33 +1,35 @@
 package asndb
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const url string = "http://www.cidr-report.org/as2.0/asn.txt"
 
 // Fetch ...
-func Fetch() map[int]string {
+func Fetch() (map[int]string, error) {
 	log.Info("Fetching up to date AS database")
 
 	resp, err := http.Get(url)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Error communicating with %s", url)
 	}
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Error parsing response from %s", url)
 	}
 
-	return parse(body)
+	return parse(body), nil
 }
 
 func parse(responseBody []byte) map[int]string {
@@ -36,11 +38,6 @@ func parse(responseBody []byte) map[int]string {
 	asnsByLine := strings.Split(string(responseBody), "\n")
 
 	for _, asnLine := range asnsByLine {
-		// Is this necessary? I think the match below will catch this.
-		if asnLine == "" {
-			continue
-		}
-
 		matchedASN := regexp.MustCompile(`([\d]+)\s+(.*),\s(\w{2})`).FindStringSubmatch(asnLine)
 		if matchedASN == nil {
 			continue

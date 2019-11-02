@@ -62,7 +62,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	asns := asndb.Fetch()
+	asns, err := asndb.Fetch()
+	if err != nil {
+		log.Warn(err)
+	}
+
 	runtimeOptions := config{broker: *broker, topic: *topic, asn: *asn}
 
 	go startPrometheusServer()
