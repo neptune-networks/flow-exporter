@@ -35,20 +35,22 @@ func Fetch() (map[int]string, error) {
 func parse(responseBody []byte) map[int]string {
 	asns := make(map[int]string)
 
-	asnsByLine := strings.Split(string(responseBody), "\n")
+	lines := strings.Split(string(responseBody), "\n")
 
-	for _, asnLine := range asnsByLine {
-		matchedASN := regexp.MustCompile(`([\d]+)\s+(.*),\s(\w{2})`).FindStringSubmatch(asnLine)
-		if matchedASN == nil {
+	for _, line := range lines {
+		match := regexp.MustCompile(`([\d]+)\s+(.*),\s(\w{2})`).FindStringSubmatch(line)
+
+		// If line doesn't match the expected format of the ASN
+		if match == nil {
 			continue
 		}
 
-		asn, err := strconv.Atoi(matchedASN[1])
+		asn, err := strconv.Atoi(match[1])
 		if err != nil {
 			panic(err)
 		}
 
-		asns[asn] = strings.ToValidUTF8(matchedASN[2], "")
+		asns[asn] = strings.ToValidUTF8(match[2], "")
 	}
 
 	return asns
