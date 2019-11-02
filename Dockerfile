@@ -7,7 +7,7 @@ COPY . /build
 WORKDIR /build
 
 RUN go mod download
-RUN go build -ldflags "${LDFLAGS}" -o flow-exporter flow-exporter.go
+RUN go build -ldflags "${LDFLAGS}" -o flow-exporter cmd/flow-exporter/main.go
 
 FROM alpine:latest
 ARG src_dir
