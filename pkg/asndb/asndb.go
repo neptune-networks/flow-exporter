@@ -15,17 +15,17 @@ type httpClient interface {
 
 // ASNDB fetches a list of Autonomous System Numbers and returns them as a map
 type ASNDB struct {
-	url       string
-	asnFormat string
-	http      httpClient
+	URL       string
+	ASNFormat string
+	HTTP      httpClient
 }
 
 // New returns a new instance of the ASNDB
 func New() *ASNDB {
 	return &ASNDB{
-		url:       "http://www.cidr-report.org/as2.0/asn.txt",
-		asnFormat: `([\d]+)\s+(.*),\s(\w{2})`,
-		http:      &http.Client{},
+		URL:       "http://www.cidr-report.org/as2.0/asn.txt",
+		ASNFormat: `([\d]+)\s+(.*),\s(\w{2})`,
+		HTTP:      &http.Client{},
 	}
 }
 
@@ -45,16 +45,16 @@ func (db ASNDB) Fetch() (map[int]string, error) {
 }
 
 func (db ASNDB) fetch() ([]byte, error) {
-	resp, err := db.http.Get(db.url)
+	resp, err := db.HTTP.Get(db.URL)
 	if err != nil {
-		return nil, fmt.Errorf("Error communicating with %s", db.url)
+		return nil, fmt.Errorf("Error communicating with %s", db.URL)
 	}
 
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil || len(body) == 0 {
-		return nil, fmt.Errorf("Error reading response from %s", db.url)
+		return nil, fmt.Errorf("Error reading response from %s", db.URL)
 	}
 
 	return body, nil
@@ -66,7 +66,7 @@ func (db ASNDB) parse(responseBody []byte) (map[int]string, error) {
 	lines := strings.Split(string(responseBody), "\n")
 
 	for _, line := range lines {
-		match := regexp.MustCompile(db.asnFormat).FindStringSubmatch(line)
+		match := regexp.MustCompile(db.ASNFormat).FindStringSubmatch(line)
 
 		if match != nil {
 			asn, err := strconv.Atoi(match[1])

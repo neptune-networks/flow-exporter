@@ -22,9 +22,9 @@ func TestFetchWithValidResponse(t *testing.T) {
 	defer server.Close()
 
 	db := ASNDB{
-		url:       server.URL,
-		asnFormat: `([\d]+)\s+(.*),\s(\w{2})`,
-		http:      &http.Client{},
+		URL:       server.URL,
+		ASNFormat: `([\d]+)\s+(.*),\s(\w{2})`,
+		HTTP:      &http.Client{},
 	}
 
 	actual, err := db.Fetch()
@@ -54,9 +54,9 @@ func TestFetchWithUnavailableServer(t *testing.T) {
 	defer server.Close()
 
 	db := ASNDB{
-		url:       server.URL,
-		asnFormat: `([\d]+)\s+(.*),\s(\w{2})`,
-		http:      &http.Client{},
+		URL:       server.URL,
+		ASNFormat: `([\d]+)\s+(.*),\s(\w{2})`,
+		HTTP:      &http.Client{},
 	}
 
 	actual, _ := db.Fetch()
@@ -79,9 +79,9 @@ func TestFetchWithInvalidData(t *testing.T) {
 	defer server.Close()
 
 	db := ASNDB{
-		url:       server.URL,
-		asnFormat: `([\d]+)`,
-		http:      &http.Client{},
+		URL:       server.URL,
+		ASNFormat: `([\d]+)`,
+		HTTP:      &http.Client{},
 	}
 
 	actual, err := db.Fetch()
