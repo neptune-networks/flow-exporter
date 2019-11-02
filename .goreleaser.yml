@@ -2,16 +2,18 @@ before:
   hooks:
     - go mod tidy
 builds:
-- env:
-  - CGO_ENABLED=0
-  goos:
-    - linux
-    - darwin
-  goarch:
-    - 386
-    - amd64
-    - arm
-    - arm64
+  -
+    main: ./cmd/flow-exporter/main.go
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - 386
+      - amd64
+      - arm
+      - arm64
 archives:
   - name_template: '{{ .ProjectName }}-{{ .Version }}.{{ .Os }}-{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
     replacements:
