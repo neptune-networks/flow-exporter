@@ -3,18 +3,18 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"net/http"
+	"os"
+	"os/signal"
+	"strconv"
+
+	"github.com/neptune-networks/flow-exporter/pkg/asndb"
+
 	"github.com/Shopify/sarama"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
-	"net/http"
-	"os"
-	"os/signal"
-	"regexp"
-	"strconv"
-	"strings"
 )
 
 type config struct {
@@ -62,50 +62,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	asns := fetchASDatabase()
+	log.Info("Fetching up to date AS database")
+	asnDB := asndb.New()
+	asns, err := asnDB.Fetch()
+	if err != nil {
+		log.Warn(err)
+	}
+
 	runtimeOptions := config{broker: *broker, topic: *topic, asn: *asn}
 
 	go startPrometheusServer()
 	createConsumer(runtimeOptions, asns)
-}
-
-func fetchASDatabase() map[int]string {
-	log.Info("Fetching up to date AS database")
-	resp, err := http.Get("http://www.cidr-report.org/as2.0/asn.txt")
-	if err != nil {
-		panic(err)
-	}
-
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		panic(err)
-	}
-
-	asns := make(map[int]string)
-
-	rawASNs := strings.Split(string(body), "\n")
-
-	for _, rawASN := range rawASNs {
-		if rawASN == "" {
-			continue
-		}
-
-		parsedASN := regexp.MustCompile(`([\d]+)\s+(.*),\s(\w{2})`).FindStringSubmatch(rawASN)
-		if parsedASN == nil {
-			continue
-		}
-
-		asn, err := strconv.Atoi(parsedASN[1])
-		if err != nil {
-			panic(err)
-		}
-
-		asns[asn] = strings.ToValidUTF8(parsedASN[2], "")
-	}
-
-	return asns
 }
 
 func startPrometheusServer() {

@@ -1,0 +1,7 @@
+0	-Reserved AS-, ZZ
+1	LVLT-1 - Level 3 Parent, LLC, US
+2	UDEL-DCN - University of Delaware, US
+3	MIT-GATEWAYS - Massachusetts Institute of Technology, US
+397142	FORT-COLLINS-CONNEXION - City of Fort Collins, US
+397143	NEPTUNE-NETWORKS - Neptune Networks, US
+397144	VOLTERRA-02 - Volterra Inc, US
