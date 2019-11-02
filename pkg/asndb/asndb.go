@@ -7,8 +7,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 const url string = "http://www.cidr-report.org/as2.0/asn.txt"
@@ -16,8 +14,6 @@ const asnFormat string = `([\d]+)\s+(.*),\s(\w{2})`
 
 // Fetch ...
 func Fetch() (map[int]string, error) {
-	log.Info("Fetching up to date AS database")
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("Error communicating with %s", url)
