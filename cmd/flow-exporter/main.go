@@ -63,7 +63,8 @@ func main() {
 	}
 
 	log.Info("Fetching up to date AS database")
-	asns, err := asndb.Fetch()
+	asnDB := asndb.New()
+	asns, err := asnDB.Fetch()
 	if err != nil {
 		log.Warn(err)
 	}
