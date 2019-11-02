@@ -26,7 +26,7 @@ func main() {
 
 ## Advanced Usage
 
-You can change the underlying source being used to query the ASNs by instantiating your own `ASNDB` struct and regex to parse it:
+By default, this package uses [CIDR Report's](http://www.cidr-report.org/as2.0/asn.txt) dump of ASN to name mappings. You can change the underlying source of ASN to name data by instantiating your own `ASNDB` struct with a different URL and corresponding regex to parse it. Below is an example on how to do this with ARIN's ASN dumps:
 
 ```go
 package main
