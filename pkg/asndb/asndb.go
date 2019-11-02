@@ -14,6 +14,20 @@ const asnFormat string = `([\d]+)\s+(.*),\s(\w{2})`
 
 // Fetch ...
 func Fetch() (map[int]string, error) {
+	resp, err := fetch(url)
+	if err != nil {
+		return nil, err
+	}
+
+	asns, err := parse(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return asns, nil
+}
+
+func fetch(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("Error communicating with %s", url)
@@ -26,12 +40,7 @@ func Fetch() (map[int]string, error) {
 		return nil, fmt.Errorf("Error reading response from %s", url)
 	}
 
-	asns, err := parse(body)
-	if err != nil {
-		return nil, fmt.Errorf("Error parsing response from %s", url)
-	}
-
-	return asns, nil
+	return body, nil
 }
 
 func parse(responseBody []byte) (map[int]string, error) {
@@ -42,17 +51,14 @@ func parse(responseBody []byte) (map[int]string, error) {
 	for _, line := range lines {
 		match := regexp.MustCompile(asnFormat).FindStringSubmatch(line)
 
-		// If line doesn't match the expected format of the ASN, move on to the next line
-		if match == nil {
-			continue
-		}
+		if match != nil {
+			asn, err := strconv.Atoi(match[1])
+			if err != nil {
+				return nil, fmt.Errorf("Error converting string to integer: %s", match[1])
+			}
 
-		asn, err := strconv.Atoi(match[1])
-		if err != nil {
-			return nil, fmt.Errorf("Error converting string to integer: %s", match[1])
+			asns[asn] = strings.ToValidUTF8(match[2], "")
 		}
-
-		asns[asn] = strings.ToValidUTF8(match[2], "")
 	}
 
 	return asns, nil
