@@ -12,6 +12,7 @@ import (
 )
 
 const url string = "http://www.cidr-report.org/as2.0/asn.txt"
+const asnFormat string = `([\d]+)\s+(.*),\s(\w{2})`
 
 // Fetch ...
 func Fetch() (map[int]string, error) {
@@ -38,7 +39,7 @@ func parse(responseBody []byte) map[int]string {
 	lines := strings.Split(string(responseBody), "\n")
 
 	for _, line := range lines {
-		match := regexp.MustCompile(`([\d]+)\s+(.*),\s(\w{2})`).FindStringSubmatch(line)
+		match := regexp.MustCompile(asnFormat).FindStringSubmatch(line)
 
 		// If line doesn't match the expected format of the ASN
 		if match == nil {
