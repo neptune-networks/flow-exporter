@@ -52,46 +52,6 @@ Flow exporter requires a Kafka topic that has events which contain the following
 - `as_dst`: The ASN that the flow was destined for
 - `bytes`: The number of bytes contained in the flow
 
-## Docker
-
-A Dockerfile is provided for convenience. It will build the source and then run the exporter. You can use the Docker command line like so:
-
-```
-docker run -p 9590:9590 neptune-networks/flow-exporter:latest --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
-```
-
-Or if you prefer Docker Compose:
-
-```yml
-flow-exporter:
-  image: neptune-networks/flow-exporter:latest
-  command: --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
-  expose:
-    - 9590
-```
-
-Ideally in the same `docker-compose.yml` file as your Prometheus server to make communication easy.
-
-## Building
-
-The application can be compiled by running:
-
-```
-git clone https://github.com/neptune-networks/flow-exporter
-cd flow-exporter
-go build
-```
-
-## Releasing
-
-To release a new version, the following commands must be run:
-
-```
-git tag -a vX.Y.Z -m "vX.Y.Z"
-git push origin vX.Y.Z
-goreleaser --rm-dist
-```
-
 ## [pmacct](https://github.com/pmacct/pmacct) Integration
 
 Flow Exporter works well with pmacct, a series of tools for monitoring flows in Linux. The following pmacctd configuration can be used to collect flows on Linux, enrich them with BGP ASN data, and publish them to Kafka:
@@ -146,3 +106,43 @@ bgp_ip=<BGP_ROUTER_ID>     ip=0.0.0.0/0
 ```
 
 More information on configuring pmacct can be found [here](https://github.com/pmacct/pmacct/blob/master/CONFIG-KEYS).
+
+## Docker
+
+A Dockerfile is provided for convenience. It will build the source and then run the exporter. You can use the Docker command line like so:
+
+```
+docker run -p 9590:9590 neptune-networks/flow-exporter:latest --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+```
+
+Or if you prefer Docker Compose:
+
+```yml
+flow-exporter:
+  image: neptune-networks/flow-exporter:latest
+  command: --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+  expose:
+    - 9590
+```
+
+Ideally in the same `docker-compose.yml` file as your Prometheus server to make communication easy.
+
+## Building
+
+The application can be compiled by running:
+
+```
+git clone https://github.com/neptune-networks/flow-exporter
+cd flow-exporter
+go build
+```
+
+## Releasing
+
+To release a new version, the following commands must be run:
+
+```
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+goreleaser --rm-dist
+```
