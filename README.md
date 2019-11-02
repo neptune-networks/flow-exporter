@@ -11,7 +11,7 @@ Grafana is a great tool to visualize Prometheus data, and can be used to take th
 The exporter can be started with:
 
 ```
-./flow-exporter --broker=kafka.ny1.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+./flow-exporter --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
 ```
 
 - `--broker`: The Kafka broker and corresponding port to consume flows from
@@ -40,7 +40,7 @@ Flow exporter requires a Kafka topic that has events which contain the following
 
 ```json
 {
-  "label": "bdr1.ny1.fqdn.com",
+  "label": "bdr1.fqdn.com",
   "as_src": 15169,
   "as_dst": 6939,
   "bytes": 52,
@@ -57,7 +57,7 @@ Flow exporter requires a Kafka topic that has events which contain the following
 A Dockerfile is provided for convenience. It will build the source and then run the exporter. You can use the Docker command line like so:
 
 ```
-docker run -p 9590:9590 neptune-networks/flow-exporter:latest --broker=kafka.ny1.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+docker run -p 9590:9590 neptune-networks/flow-exporter:latest --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
 ```
 
 Or if you prefer Docker Compose:
@@ -65,7 +65,7 @@ Or if you prefer Docker Compose:
 ```yml
 flow-exporter:
   image: neptune-networks/flow-exporter:latest
-  command: --broker=kafka.ny1.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+  command: --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
   expose:
     - 9590
 ```
@@ -82,7 +82,7 @@ cd flow-exporter
 go build
 ```
 
-## [pmacct](http://www.pmacct.net) Integration
+## [pmacct](https://github.com/pmacct/pmacct) Integration
 
 Flow Exporter works well with pmacct, a series of tools for monitoring flows in Linux. The following pmacctd configuration can be used to collect flows on Linux, enrich them with BGP ASN data, and publish them to Kafka:
 
@@ -110,7 +110,7 @@ bgp_agent_map: /etc/pmacct/peering_agent.map
 networks_file: /etc/pmacct/networks.lst
 networks_file_no_lpm: true
 !
-aggregate: src_host, dst_host, src_port, dst_port, src_as, dst_as
+aggregate: src_host, dst_host, src_port, dst_port, src_as, dst_as, label
 !
 plugins: kafka
 kafka_output: json
@@ -126,7 +126,7 @@ And the associated configurations referenced in that file:
 #### `/etc/pmacct/interfaces.map`
 
 ```
-ifindex=100 ifname=ens3
+ifindex=100 ifname=<INTERFACE>
 ```
 
 #### `/etc/pmacct/peering_agent.map`
