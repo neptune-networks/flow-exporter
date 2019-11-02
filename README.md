@@ -82,6 +82,16 @@ cd flow-exporter
 go build
 ```
 
+## Releasing
+
+To release a new version, the following commands must be run:
+
+```
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push origin vX.Y.Z
+goreleaser --rm-dist
+```
+
 ## [pmacct](https://github.com/pmacct/pmacct) Integration
 
 Flow Exporter works well with pmacct, a series of tools for monitoring flows in Linux. The following pmacctd configuration can be used to collect flows on Linux, enrich them with BGP ASN data, and publish them to Kafka:
