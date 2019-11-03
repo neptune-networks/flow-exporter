@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/neptune-networks/flow-exporter/pkg/asndb"
 
@@ -67,7 +69,7 @@ func main() {
 	}
 
 	go startPrometheusServer()
-	createConsumer(asns)
+	consume(*broker, *topic, *asn, asns)
 }
 
 func startPrometheusServer() {
@@ -76,65 +78,105 @@ func startPrometheusServer() {
 	http.ListenAndServe(":9590", nil)
 }
 
-func createConsumer(asnsDatabase map[int]string) {
-	log.Info("Starting Kafka consumer")
-	consumer, err := sarama.NewConsumer([]string{*broker}, nil)
+func consume(broker string, topic string, asn int, asns map[int]string) {
+	c, err := sarama.NewConsumer(strings.Split(broker, ","), nil)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to start consumer: %s", err)
 	}
 
-	defer func() {
-		if err := consumer.Close(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	partitionConsumer, err := consumer.ConsumePartition(*topic, 0, sarama.OffsetNewest)
+	partitionList, err := getPartitions(c)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Failed to start consumer: %s", err)
 	}
 
-	defer func() {
-		if err := partitionConsumer.Close(); err != nil {
-			log.Fatal(err)
-		}
+	var (
+		messages = make(chan *sarama.ConsumerMessage, 256)
+		closing  = make(chan struct{})
+		wg       sync.WaitGroup
+	)
+
+	go func() {
+		signals := make(chan os.Signal, 1)
+		signal.Notify(signals, os.Kill, os.Interrupt)
+		<-signals
+		log.Info("Shutting down consumer")
+		close(closing)
 	}()
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, os.Interrupt)
+	for _, partition := range partitionList {
+		partitionConsumer, err := c.ConsumePartition(topic, partition, sarama.OffsetNewest)
+		if err != nil {
+			log.Fatalf("Failed to start consumer for partition %d: %s", partition, err)
+		}
 
-ConsumerLoop:
-	for {
-		select {
-		case msg := <-partitionConsumer.Messages():
+		go func(pc sarama.PartitionConsumer) {
+			<-closing
+			pc.AsyncClose()
+		}(partitionConsumer)
+
+		wg.Add(1)
+		go func(partitionConsumer sarama.PartitionConsumer) {
+			defer wg.Done()
+			for message := range partitionConsumer.Messages() {
+				messages <- message
+			}
+		}(partitionConsumer)
+	}
+
+	go func() {
+		for msg := range messages {
 			var flow flow
 			json.Unmarshal([]byte(msg.Value), &flow)
 
-			if flow.SourceAS == *asn {
+			if flow.SourceAS == asn {
 				flowTransmitBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
-						"source_as_name":      asnsDatabase[flow.SourceAS],
+						"source_as_name":      asns[flow.SourceAS],
 						"destination_as":      strconv.Itoa(flow.DestinationAS),
-						"destination_as_name": asnsDatabase[flow.DestinationAS],
+						"destination_as_name": asns[flow.DestinationAS],
 						"hostname":            flow.Hostname,
 					},
 				).Add(float64(flow.Bytes))
-			} else if flow.DestinationAS == *asn {
+			} else if flow.DestinationAS == asn {
 				flowReceiveBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
-						"source_as_name":      asnsDatabase[flow.SourceAS],
+						"source_as_name":      asns[flow.SourceAS],
 						"destination_as":      strconv.Itoa(flow.DestinationAS),
-						"destination_as_name": asnsDatabase[flow.DestinationAS],
+						"destination_as_name": asns[flow.DestinationAS],
 						"hostname":            flow.Hostname,
 					},
 				).Add(float64(flow.Bytes))
 			}
 
 			log.WithFields(log.Fields{"offset": msg.Offset}).Debug("Consumed message offset")
-		case <-signals:
-			break ConsumerLoop
 		}
+	}()
+
+	wg.Wait()
+	close(messages)
+
+	if err := c.Close(); err != nil {
+		log.Warnf("Failed to close consumer: %s", err)
 	}
+}
+
+func getPartitions(c sarama.Consumer) ([]int32, error) {
+	if *partitions == "all" {
+		return c.Partitions(*topic)
+	}
+
+	tmp := strings.Split(*partitions, ",")
+	var partitionList []int32
+	for i := range tmp {
+		val, err := strconv.ParseInt(tmp[i], 10, 32)
+		if err != nil {
+			return nil, err
+		}
+
+		partitionList = append(partitionList, int32(val))
+	}
+
+	return partitionList, nil
 }
