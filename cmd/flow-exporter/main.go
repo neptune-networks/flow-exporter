@@ -21,7 +21,6 @@ type config struct {
 	broker string
 	topic  string
 	asn    int
-	asns   map[int]string
 }
 
 type flow struct {
