@@ -19,17 +19,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type flow struct {
-	SourceAS      int    `json:"as_src"`
-	DestinationAS int    `json:"as_dst"`
-	SourceIP      string `json:"ip_dst"`
-	DestinationIP string `json:"ip_src"`
-	Bytes         int    `json:"bytes"`
-	Hostname      string `json:"label"`
-}
-
 var (
-	broker     = flag.String("broker", "", "The Kafka broker to connect to")
+	brokers    = flag.String("brokers", "", "A comma separated list of Kafka brokers to connect to")
 	topic      = flag.String("topic", "", "The Kafka topic to consume from")
 	partitions = flag.String("partitions", "all", "The partitions to consume, can be 'all' or comma-separated numbers")
 	asn        = flag.Int("asn", 0, "The ASN being monitored")
@@ -53,10 +44,19 @@ var (
 	)
 )
 
+type flow struct {
+	SourceAS      int    `json:"as_src"`
+	DestinationAS int    `json:"as_dst"`
+	SourceIP      string `json:"ip_dst"`
+	DestinationIP string `json:"ip_src"`
+	Bytes         int    `json:"bytes"`
+	Hostname      string `json:"label"`
+}
+
 func main() {
 	flag.Parse()
 
-	if *broker == "" || *topic == "" || *asn == 0 {
+	if *brokers == "" || *topic == "" || *asn == 0 {
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -69,7 +69,7 @@ func main() {
 	}
 
 	go startPrometheusServer()
-	consume(*broker, *topic, *asn, asns)
+	consume(*brokers, *topic, *asn, asns)
 }
 
 func startPrometheusServer() {
@@ -78,8 +78,8 @@ func startPrometheusServer() {
 	http.ListenAndServe(":9590", nil)
 }
 
-func consume(broker string, topic string, asn int, asns map[int]string) {
-	c, err := sarama.NewConsumer(strings.Split(broker, ","), nil)
+func consume(brokers string, topic string, asn int, asns map[int]string) {
+	c, err := sarama.NewConsumer(strings.Split(brokers, ","), nil)
 	if err != nil {
 		log.Fatalf("Failed to start consumer: %s", err)
 	}
