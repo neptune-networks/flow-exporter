@@ -11,10 +11,10 @@ Grafana is a great tool to visualize Prometheus data, and can be used to take th
 The exporter can be started with:
 
 ```
-./flow-exporter --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+./flow-exporter --brokers=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
 ```
 
-- `--broker`: The Kafka broker and corresponding port to consume flows from
+- `--brokers`: A comma separated list of Kafka brokers (with their corresponding ports) to consume flows from
 - `--topic`: The Kafka topic to consume flows from
 - `--asn`: The autonomous system number that the flows are being monitored from
 
