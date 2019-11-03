@@ -17,12 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type config struct {
-	broker string
-	topic  string
-	asn    int
-}
-
 type flow struct {
 	SourceAS      int    `json:"as_src"`
 	DestinationAS int    `json:"as_dst"`
@@ -31,6 +25,13 @@ type flow struct {
 	Bytes         int    `json:"bytes"`
 	Hostname      string `json:"label"`
 }
+
+var (
+	broker     = flag.String("broker", "", "The Kafka broker to connect to")
+	topic      = flag.String("topic", "", "The Kafka topic to consume from")
+	partitions = flag.String("partitions", "all", "The partitions to consume, can be 'all' or comma-separated numbers")
+	asn        = flag.Int("asn", 0, "The ASN being monitored")
+)
 
 var (
 	flowReceiveBytesTotal = promauto.NewCounterVec(
@@ -51,9 +52,6 @@ var (
 )
 
 func main() {
-	broker := flag.String("broker", "", "The Kafka broker to connect to")
-	topic := flag.String("topic", "", "The Kafka topic to consume from")
-	asn := flag.Int("asn", 0, "The ASN being monitored")
 	flag.Parse()
 
 	if *broker == "" || *topic == "" || *asn == 0 {
@@ -68,10 +66,8 @@ func main() {
 		log.Warn(err)
 	}
 
-	runtimeOptions := config{broker: *broker, topic: *topic, asn: *asn}
-
 	go startPrometheusServer()
-	createConsumer(runtimeOptions, asns)
+	createConsumer(asns)
 }
 
 func startPrometheusServer() {
@@ -80,9 +76,9 @@ func startPrometheusServer() {
 	http.ListenAndServe(":9590", nil)
 }
 
-func createConsumer(options config, asnsDatabase map[int]string) {
+func createConsumer(asnsDatabase map[int]string) {
 	log.Info("Starting Kafka consumer")
-	consumer, err := sarama.NewConsumer([]string{options.broker}, nil)
+	consumer, err := sarama.NewConsumer([]string{*broker}, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -93,7 +89,7 @@ func createConsumer(options config, asnsDatabase map[int]string) {
 		}
 	}()
 
-	partitionConsumer, err := consumer.ConsumePartition(options.topic, 0, sarama.OffsetNewest)
+	partitionConsumer, err := consumer.ConsumePartition(*topic, 0, sarama.OffsetNewest)
 	if err != nil {
 		panic(err)
 	}
@@ -114,7 +110,7 @@ ConsumerLoop:
 			var flow flow
 			json.Unmarshal([]byte(msg.Value), &flow)
 
-			if flow.SourceAS == options.asn {
+			if flow.SourceAS == *asn {
 				flowTransmitBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
@@ -124,7 +120,7 @@ ConsumerLoop:
 						"hostname":            flow.Hostname,
 					},
 				).Add(float64(flow.Bytes))
-			} else if flow.DestinationAS == options.asn {
+			} else if flow.DestinationAS == *asn {
 				flowReceiveBytesTotal.With(
 					prometheus.Labels{
 						"source_as":           strconv.Itoa(flow.SourceAS),
