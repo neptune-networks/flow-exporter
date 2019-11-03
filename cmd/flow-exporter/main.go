@@ -35,7 +35,7 @@ func main() {
 	}
 
 	go func() {
-		log.Info("Starting Prometheus web server on http://localhost:9590")
+		log.Info("Starting Prometheus web server, available at: http://localhost:9590/metrics")
 		http.Handle("/metrics", promhttp.Handler())
 		http.ListenAndServe(":9590", nil)
 	}()
