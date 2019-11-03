@@ -88,33 +88,8 @@ func Consume(brokers string, topic string, partitions string, asn int, asns map[
 	}
 
 	go func() {
-		for msg := range messages {
-			var flow flow
-			json.Unmarshal([]byte(msg.Value), &flow)
-
-			if flow.SourceAS == asn {
-				flowTransmitBytesTotal.With(
-					prometheus.Labels{
-						"source_as":           strconv.Itoa(flow.SourceAS),
-						"source_as_name":      asns[flow.SourceAS],
-						"destination_as":      strconv.Itoa(flow.DestinationAS),
-						"destination_as_name": asns[flow.DestinationAS],
-						"hostname":            flow.Hostname,
-					},
-				).Add(float64(flow.Bytes))
-			} else if flow.DestinationAS == asn {
-				flowReceiveBytesTotal.With(
-					prometheus.Labels{
-						"source_as":           strconv.Itoa(flow.SourceAS),
-						"source_as_name":      asns[flow.SourceAS],
-						"destination_as":      strconv.Itoa(flow.DestinationAS),
-						"destination_as_name": asns[flow.DestinationAS],
-						"hostname":            flow.Hostname,
-					},
-				).Add(float64(flow.Bytes))
-			}
-
-			log.WithFields(log.Fields{"offset": msg.Offset}).Debug("Consumed message offset")
+		for message := range messages {
+			logFlow(*message, asns, asn)
 		}
 	}()
 
@@ -143,4 +118,33 @@ func getPartitions(c sarama.Consumer, topic string, partitions string) ([]int32,
 	}
 
 	return partitionList, nil
+}
+
+func logFlow(message sarama.ConsumerMessage, asns map[int]string, asn int) {
+	var f flow
+	json.Unmarshal([]byte(message.Value), &f)
+
+	if f.SourceAS == asn {
+		flowTransmitBytesTotal.With(
+			prometheus.Labels{
+				"source_as":           strconv.Itoa(f.SourceAS),
+				"source_as_name":      asns[f.SourceAS],
+				"destination_as":      strconv.Itoa(f.DestinationAS),
+				"destination_as_name": asns[f.DestinationAS],
+				"hostname":            f.Hostname,
+			},
+		).Add(float64(f.Bytes))
+	} else if f.DestinationAS == asn {
+		flowReceiveBytesTotal.With(
+			prometheus.Labels{
+				"source_as":           strconv.Itoa(f.SourceAS),
+				"source_as_name":      asns[f.SourceAS],
+				"destination_as":      strconv.Itoa(f.DestinationAS),
+				"destination_as_name": asns[f.DestinationAS],
+				"hostname":            f.Hostname,
+			},
+		).Add(float64(f.Bytes))
+	}
+
+	log.WithFields(log.Fields{"offset": message.Offset}).Debug("Consumed message offset")
 }
