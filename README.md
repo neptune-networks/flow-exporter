@@ -6,6 +6,8 @@ Grafana is a great tool to visualize Prometheus data, and can be used to take th
 
 ![preview](https://user-images.githubusercontent.com/934497/67167662-85e57080-f36a-11e9-96e2-f6f5b3b7e5d0.png)
 
+An in depth guide on setting this up on a Linux-based router can be found [here](https://brooks.sh/2019/11/17/network-flow-analysis-with-prometheus/).
+
 ## Usage
 
 The exporter can be started with:
