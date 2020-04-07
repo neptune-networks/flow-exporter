@@ -22,9 +22,13 @@ var (
 func main() {
 	flag.Parse()
 
-	if *brokers == "" || *topic == "" || *asn == 0 {
+	if *brokers == "" || *topic == "" {
 		flag.PrintDefaults()
 		os.Exit(1)
+	}
+
+	if *asn == 0 {
+		log.Info("No ASN set, defaulting to AS0. This will lead to inaccurate data, be sure to set the ASN in the --asn argument")
 	}
 
 	log.Info("Fetching up to date AS database")
