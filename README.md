@@ -114,7 +114,7 @@ More information on configuring pmacct can be found [here](https://github.com/pm
 A Dockerfile is provided for convenience. It will build the source and then run the exporter. You can use the Docker command line like so:
 
 ```
-docker run -p 9590:9590 bswinnerton/flow-exporter:latest --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+docker run -p 9590:9590 bswinnerton/flow-exporter:latest --brokers=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
 ```
 
 Or if you prefer Docker Compose:
@@ -122,7 +122,7 @@ Or if you prefer Docker Compose:
 ```yml
 flow-exporter:
   image: bswinnerton/flow-exporter:latest
-  command: --broker=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
+  command: --brokers=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
   expose:
     - 9590
 ```
