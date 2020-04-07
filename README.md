@@ -135,8 +135,8 @@ The application can be compiled by running:
 
 ```
 git clone https://github.com/neptune-networks/flow-exporter
-cd flow-exporter
-go build
+cd flow-exporter/cmd/flow-exporter
+go build main.go
 ```
 
 ## Releasing
