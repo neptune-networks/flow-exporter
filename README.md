@@ -16,6 +16,7 @@ The exporter can be started with:
 ./flow-exporter --brokers=kafka.fqdn.com:9092 --topic=pmacct.acct --asn=15169
 ```
 
+- `--addr`: Listening address (default = :9590)
 - `--brokers`: A comma separated list of Kafka brokers (with their corresponding ports) to consume flows from
 - `--topic`: The Kafka topic to consume flows from
 - `--asn`: The autonomous system number that the flows are being monitored from

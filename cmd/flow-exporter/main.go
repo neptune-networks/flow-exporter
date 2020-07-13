@@ -17,6 +17,7 @@ var (
 	topic      = flag.String("topic", "", "The Kafka topic to consume from")
 	partitions = flag.String("partitions", "all", "The partitions to consume, can be 'all' or comma-separated numbers")
 	asn        = flag.Int("asn", 0, "The ASN being monitored")
+	addr       = flag.String("addr", ":9590", "Listening Address")
 )
 
 func main() {
@@ -39,9 +40,9 @@ func main() {
 	}
 
 	go func() {
-		log.Info("Starting Prometheus web server, available at: http://localhost:9590/metrics")
+		log.Infof("Starting Prometheus web server, available at: http://%s/metrics", *addr)
 		http.Handle("/metrics", promhttp.Handler())
-		http.ListenAndServe(":9590", nil)
+		http.ListenAndServe(*addr, nil)
 	}()
 
 	consumer.Consume(*brokers, *topic, *partitions, *asn, asns)
