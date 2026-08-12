@@ -28,11 +28,11 @@ An example of the Prometheus metrics you can find are:
 ```
 # HELP flow_receive_bytes_total Bytes received.
 # TYPE flow_receive_bytes_total counter
-flow_receive_bytes_total{destination_as="397143",destination_as_name="NEPTUNE-NETWORKS - Neptune Networks",hostname="border.neptunenetworks.org",source_as="10318",source_as_name="CABLEVISION S.A."} 663
+flow_receive_bytes_total{destination_as="397143",destination_as_name="NEPTUNE-NETWORKS - Neptune Networks",dst_net="2a0b:b7c4::/30",hostname="border.neptunenetworks.org",source_as="10318",source_as_name="CABLEVISION S.A.",src_net="2a0e:8f02:f017::/48"} 663
 
 # HELP flow_transmit_bytes_total Bytes transferred.
 # TYPE flow_transmit_bytes_total counter
-flow_transmit_bytes_total{destination_as="10318",destination_as_name="CABLEVISION S.A.",hostname="border.neptunenetworks.org",source_as="397143",source_as_name="NEPTUNE-NETWORKS - Neptune Networks"} 1137
+flow_transmit_bytes_total{destination_as="10318",destination_as_name="CABLEVISION S.A.",dst_net="2a0b:b7c4::/30",hostname="border.neptunenetworks.org",source_as="397143",source_as_name="NEPTUNE-NETWORKS - Neptune Networks",src_net="2a0e:8f02:f017::/48"} 1137
 ```
 
 Flow Exporter automatically finds the name of the ASN and adds it to the metric.
@@ -46,6 +46,10 @@ Flow exporter requires a Kafka topic that has events which contain the following
   "label": "bdr1.fqdn.com",
   "as_src": 15169,
   "as_dst": 6939,
+  "net_src": "2a0e:8f02:f017::",
+  "net_dst": "2a0b:b7c4::",
+  "mask_src": 48,
+  "mask_dst": 30,
   "bytes": 52,
 }
 ```
@@ -54,6 +58,10 @@ Flow exporter requires a Kafka topic that has events which contain the following
 - `as_src`: The ASN that originated the flow
 - `as_dst`: The ASN that the flow was destined for
 - `bytes`: The number of bytes contained in the flow
+- `net_src`: Source subnet of the flow
+- `net_dst`: Destination subnet of the flow
+- `mask_src`: Netmask of the source subnet
+- `mask_dst`: Netmask of the destination subnet
 
 ## [pmacct](https://github.com/pmacct/pmacct) Integration
 
@@ -83,7 +91,7 @@ bgp_agent_map: /etc/pmacct/peering_agent.map
 networks_file: /etc/pmacct/networks.lst
 networks_file_no_lpm: true
 !
-aggregate: src_host, dst_host, src_port, dst_port, src_as, dst_as, label
+aggregate: net_src, net_dst, mask_src, mask_dst, src_port, dst_port, src_as, dst_as, label
 !
 plugins: kafka
 kafka_output: json

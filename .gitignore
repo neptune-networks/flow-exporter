@@ -1,2 +1,4 @@
 ./flow-exporter
 dist/
+cmd/flow-exporter/flow-exporter
+cmd/flow-exporter/main
